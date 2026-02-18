@@ -1,7 +1,5 @@
 {
   "name": "NexusGuard 4D - Advanced Network Intelligence",
   "description": "A futuristic, high-performance network monitoring dashboard featuring 3D visualization, real-time traffic analysis, and Gemini-powered security auditing.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }
