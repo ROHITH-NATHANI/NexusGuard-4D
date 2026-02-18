@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeNetworkLogs = async (logs: string) => {
@@ -9,21 +8,21 @@ export const analyzeNetworkLogs = async (logs: string) => {
       model: "gemini-3-flash-preview",
       contents: `
         Analyze the following network log data and provide a concise security assessment and performance optimization recommendations. 
-        Focus on anomalies, potential threats, and latency bottlenecks.
+        Focus on anomalies, potential threats, and latency bottlenecks. Use a professional but futuristic tone.
         
         LOG DATA:
         ${logs}
       `,
       config: {
-        temperature: 0.7,
-        topP: 0.9
+        temperature: 0.8,
+        topP: 0.95
       }
     });
 
-    return response.text || "No analysis available.";
+    return response.text || "ANALYTICS BUFFER EMPTY. NO THREATS DETECTED.";
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    return "Failed to analyze network data. Please check your connectivity and API key.";
+    return "NEURAL LINK FAILURE: FAILED TO ANALYZE PACKET STREAM. CHECK ENCRYPTION KEYS.";
   }
 };
 
@@ -32,7 +31,7 @@ export const getSmartSuggestions = async (metrics: any) => {
     try {
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Current Network Metrics: ${JSON.stringify(metrics)}. Provide 3 bullet points for a CTO on how to optimize this network.`,
+            contents: `Current Network Metrics: ${JSON.stringify(metrics)}. Provide 3 strategic suggestions for network hardening and optimization.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -43,18 +42,22 @@ export const getSmartSuggestions = async (metrics: any) => {
                             items: { type: Type.STRING }
                         }
                     },
-                    propertyOrdering: ["suggestions"]
+                    required: ["suggestions"]
                 }
             }
         });
         
         const text = response.text?.trim();
-        if (!text) throw new Error("Empty response");
+        if (!text) throw new Error("Null response");
         
         const data = JSON.parse(text);
         return data.suggestions;
     } catch (error) {
         console.error("Smart Suggestions Error:", error);
-        return ["Monitor backbone latency", "Review firewall rules", "Check for packet fragmentation"];
+        return [
+          "ENFORCE LAYER 7 PROTOCOL INSPECTION", 
+          "AUDIT PERIMETER FIREWALL RECURSIVELY", 
+          "OPTIMIZE BACKBONE FIBER LATENCY"
+        ];
     }
 };

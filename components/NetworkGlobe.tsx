@@ -1,15 +1,15 @@
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { 
   Points, 
   PointMaterial, 
   Line, 
   Text,
-  PerspectiveCamera,
   Float,
   Center,
   OrbitControls,
-  Stars
+  Stars,
+  PerspectiveCamera
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { TopologyType, NetworkDevice } from '../types';
@@ -22,40 +22,47 @@ interface NodeMeshProps {
 const NodeMesh: React.FC<NodeMeshProps> = ({ position, device }) => {
   const meshRef = useRef<THREE.Mesh>(null!);
   const glowRef = useRef<THREE.Mesh>(null!);
-  const color = device.status === 'online' ? '#0ea5e9' : device.status === 'alert' ? '#f43f5e' : '#334155';
+  const ringRef = useRef<THREE.Mesh>(null!);
+  
+  const color = device.status === 'online' ? '#0ea5e9' : device.status === 'alert' ? '#f43f5e' : '#475569';
   
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    const pulse = 1 + Math.sin(t * 5 + Number(device.id)) * 0.1;
+    const pulse = 1 + Math.sin(t * 4 + Number(device.id)) * 0.12;
     meshRef.current.scale.set(pulse, pulse, pulse);
-    glowRef.current.scale.set(pulse * 1.5, pulse * 1.5, pulse * 1.5);
-    glowRef.current.rotation.y += 0.01;
+    glowRef.current.scale.set(pulse * 1.6, pulse * 1.6, pulse * 1.6);
+    ringRef.current.rotation.z += 0.02;
+    ringRef.current.rotation.x += 0.01;
   });
 
   return (
     <group position={position}>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.25, 32, 32]} />
+        <sphereGeometry args={[0.3, 32, 32]} />
         <meshStandardMaterial 
           color={color} 
           emissive={color} 
-          emissiveIntensity={4} 
+          emissiveIntensity={5} 
           metalness={1} 
           roughness={0} 
         />
       </mesh>
       <mesh ref={glowRef}>
-        <octahedronGeometry args={[0.35, 1]} />
-        <meshBasicMaterial color={color} transparent opacity={0.2} wireframe />
+        <sphereGeometry args={[0.35, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.15} />
+      </mesh>
+      <mesh ref={ringRef}>
+        <torusGeometry args={[0.5, 0.02, 8, 32]} />
+        <meshBasicMaterial color={color} transparent opacity={0.5} />
       </mesh>
       <Text
-        position={[0, 0.7, 0]}
-        fontSize={0.2}
+        position={[0, 0.8, 0]}
+        fontSize={0.22}
         color="#ffffff"
         font="https://fonts.gstatic.com/s/orbitron/v25/yMJRMIPr_9zSaAd9nToO375aaA.woff"
         anchorX="center"
-        outlineWidth={0.03}
-        outlineColor="#020617"
+        outlineWidth={0.04}
+        outlineColor="#000000"
       >
         {device.name}
       </Text>
@@ -63,12 +70,12 @@ const NodeMesh: React.FC<NodeMeshProps> = ({ position, device }) => {
   );
 };
 
-const DataPulse: React.FC<{ start: [number, number, number], end: [number, number, number], color: string }> = ({ start, end, color }) => {
+const DataPulse: React.FC<{ start: THREE.Vector3, end: THREE.Vector3, color: string }> = ({ start, end, color }) => {
   const pulseRef = useRef<THREE.Mesh>(null!);
-  const curve = useMemo(() => new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end)), [start, end]);
+  const curve = useMemo(() => new THREE.LineCurve3(start, end), [start, end]);
   
   useFrame((state) => {
-    const speed = 0.8 + Math.random() * 0.4;
+    const speed = 0.6 + Math.random() * 0.4;
     const t = (state.clock.getElapsedTime() * speed) % 1;
     const pos = curve.getPoint(t);
     pulseRef.current.position.copy(pos);
@@ -76,23 +83,24 @@ const DataPulse: React.FC<{ start: [number, number, number], end: [number, numbe
 
   return (
     <mesh ref={pulseRef}>
-      <sphereGeometry args={[0.08, 12, 12]} />
-      <meshBasicMaterial color={color} />
+      <sphereGeometry args={[0.07, 8, 8]} />
+      <meshBasicMaterial color={color} transparent opacity={0.8} />
     </mesh>
   );
 };
 
 const TopologyVisualizer: React.FC<{ type: TopologyType; devices: NetworkDevice[] }> = ({ type, devices }) => {
   const groupRef = useRef<THREE.Group>(null!);
+  const laserRef = useRef<THREE.Mesh>(null!);
 
   const nodePositions = useMemo(() => {
     const positions: [number, number, number][] = [];
     const count = devices.length;
-    const radius = 5;
+    const radius = 6;
 
     switch (type) {
       case 'star':
-        positions.push([0, 0, 0]); // Gateway node at center
+        positions.push([0, 0, 0]);
         for (let i = 1; i < count; i++) {
           const angle = (i / (count - 1)) * Math.PI * 2;
           positions.push([Math.cos(angle) * radius, Math.sin(angle) * radius, 0]);
@@ -106,7 +114,7 @@ const TopologyVisualizer: React.FC<{ type: TopologyType; devices: NetworkDevice[
         break;
       case 'grid':
         const size = Math.ceil(Math.sqrt(count));
-        const spacing = 3;
+        const spacing = 4;
         for (let i = 0; i < count; i++) {
           const x = (i % size) - (size - 1) / 2;
           const y = Math.floor(i / size) - (size - 1) / 2;
@@ -125,78 +133,71 @@ const TopologyVisualizer: React.FC<{ type: TopologyType; devices: NetworkDevice[
         }
         break;
       case 'hybrid':
-        // Core Star-Ring hybrid
         positions.push([0, 0, 0]);
         for (let i = 1; i < 4; i++) {
           const angle = (i / 3) * Math.PI * 2;
-          positions.push([Math.cos(angle) * 2.5, Math.sin(angle) * 2.5, 0]);
+          positions.push([Math.cos(angle) * 3, Math.sin(angle) * 3, 0]);
         }
         for (let i = 4; i < count; i++) {
           const angle = (i / (count - 4)) * Math.PI * 2;
-          positions.push([Math.cos(angle) * 6, Math.sin(angle) * 6, Math.sin(i) * 3]);
+          positions.push([Math.cos(angle) * 7, Math.sin(angle) * 7, Math.sin(i) * 4]);
         }
         break;
     }
     return positions;
   }, [type, devices.length]);
 
-  const connectionElements = useMemo(() => {
-    const elements: React.ReactElement[] = [];
-    const count = nodePositions.length;
-
+  const connections = useMemo(() => {
+    const lines: React.ReactElement[] = [];
     const addLink = (i: number, j: number) => {
-      if (i >= count || j >= count) return;
+      if (!nodePositions[i] || !nodePositions[j]) return;
       const color = (devices[i]?.status === 'alert' || devices[j]?.status === 'alert') ? '#f43f5e' : '#0ea5e9';
-      const key = `link-${i}-${j}-${type}`;
-      elements.push(
-        <group key={key}>
-          <Line 
-            points={[nodePositions[i], nodePositions[j]]} 
-            color={color} 
-            lineWidth={3} 
-            transparent 
-            opacity={0.4} 
-          />
-          <DataPulse start={nodePositions[i]} end={nodePositions[j]} color={color} />
+      const start = new THREE.Vector3(...nodePositions[i]);
+      const end = new THREE.Vector3(...nodePositions[j]);
+      lines.push(
+        <group key={`link-${i}-${j}-${type}`}>
+          <Line points={[start, end]} color={color} lineWidth={2} transparent opacity={0.3} />
+          <DataPulse start={start} end={end} color={color} />
         </group>
       );
     };
 
     switch (type) {
       case 'star':
-        for (let i = 1; i < count; i++) addLink(0, i);
+        for (let i = 1; i < nodePositions.length; i++) addLink(0, i);
         break;
       case 'ring':
-        for (let i = 0; i < count; i++) addLink(i, (i + 1) % count);
+        for (let i = 0; i < nodePositions.length; i++) addLink(i, (i + 1) % nodePositions.length);
         break;
       case 'grid':
-        const size = Math.ceil(Math.sqrt(count));
-        for (let i = 0; i < count; i++) {
-          if ((i + 1) % size !== 0 && i + 1 < count) addLink(i, i + 1);
-          if (i + size < count) addLink(i, i + size);
+        const size = Math.ceil(Math.sqrt(nodePositions.length));
+        for (let i = 0; i < nodePositions.length; i++) {
+          if ((i + 1) % size !== 0 && i + 1 < nodePositions.length) addLink(i, i + 1);
+          if (i + size < nodePositions.length) addLink(i, i + size);
         }
         break;
       case 'mesh':
-        for (let i = 0; i < count; i++) {
-          for (let j = i + 1; j < count; j++) {
-            if (Math.random() > 0.5) addLink(i, j);
+        for (let i = 0; i < nodePositions.length; i++) {
+          for (let j = i + 1; j < nodePositions.length; j++) {
+            if (Math.random() > 0.6) addLink(i, j);
           }
         }
         break;
       case 'hybrid':
         for (let i = 1; i < 4; i++) addLink(0, i);
-        for (let i = 4; i < count; i++) {
-          addLink(i, (i + 1 >= count) ? 4 : i + 1);
+        for (let i = 4; i < nodePositions.length; i++) {
+          addLink(i, (i + 1 >= nodePositions.length) ? 4 : i + 1);
           if (i % 2 === 0) addLink(i, 1 + (i % 3));
         }
         break;
     }
-    return elements;
+    return lines;
   }, [type, nodePositions, devices]);
 
   useFrame((state) => {
-    groupRef.current.rotation.y += 0.004;
-    groupRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.1) * 0.15;
+    groupRef.current.rotation.y += 0.003;
+    const t = state.clock.getElapsedTime();
+    laserRef.current.position.y = Math.sin(t * 1.5) * 8;
   });
 
   return (
@@ -204,39 +205,36 @@ const TopologyVisualizer: React.FC<{ type: TopologyType; devices: NetworkDevice[
       {nodePositions.map((pos, idx) => (
         <NodeMesh key={`node-${idx}-${type}`} position={pos} device={devices[idx]} />
       ))}
-      {connectionElements}
+      {connections}
+      <mesh ref={laserRef} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[12, 12, 0.05, 64]} />
+        <meshBasicMaterial color="#0ea5e9" transparent opacity={0.05} />
+      </mesh>
     </group>
-  );
-};
-
-const Effects: React.FC = () => {
-  return (
-    <>
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <gridHelper args={[60, 30, '#0ea5e9', '#1e293b']} position={[0, -8, 0]} transparent opacity={0.15} />
-      <ambientLight intensity={0.6} />
-      <pointLight position={[10, 20, 10]} intensity={2.5} color="#0ea5e9" />
-      <spotLight position={[-20, 30, 10]} angle={0.3} penumbra={1} intensity={2} color="#f472b6" />
-    </>
   );
 };
 
 const NetworkGlobe: React.FC<{ type: TopologyType, devices: NetworkDevice[] }> = ({ type, devices }) => {
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+    <div className="w-full h-full absolute inset-0">
       <Canvas 
-        shadows 
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        camera={{ position: [0, 0, 18], fov: 45 }}
+        camera={{ position: [0, 0, 20], fov: 45 }}
       >
-        <Effects />
+        <color attach="background" args={['#020617']} />
+        <Stars radius={100} depth={50} count={6000} factor={4} saturation={0} fade speed={1} />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 15, 10]} intensity={2} color="#0ea5e9" />
+        <spotLight position={[-15, 20, 10]} angle={0.25} penumbra={1} intensity={1.5} color="#f472b6" />
+        
         <Center>
-          <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.6}>
+          <Float speed={2} rotationIntensity={0.1} floatIntensity={0.5}>
             <TopologyVisualizer type={type} devices={devices} />
           </Float>
         </Center>
-        <OrbitControls enableZoom={true} enablePan={false} autoRotate={false} maxDistance={40} minDistance={10} />
-        <fog attach="fog" args={['#020617', 15, 45]} />
+        
+        <OrbitControls enableZoom={true} enablePan={false} autoRotate={false} maxDistance={45} minDistance={12} />
+        <fog attach="fog" args={['#020617', 20, 50]} />
       </Canvas>
     </div>
   );
