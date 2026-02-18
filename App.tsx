@@ -239,7 +239,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex-1 relative w-full h-full overflow-hidden">
+                    <div className="flex-1 relative w-full h-full">
                       <NetworkGlobe type={topology} devices={devices} />
                     </div>
 

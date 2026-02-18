@@ -27,6 +27,7 @@ const NodeMesh: React.FC<NodeMeshProps> = ({ position, device }) => {
   const color = device.status === 'online' ? '#0ea5e9' : device.status === 'alert' ? '#f43f5e' : '#475569';
   
   useFrame((state) => {
+    if (!meshRef.current || !glowRef.current || !ringRef.current) return;
     const t = state.clock.getElapsedTime();
     const pulse = 1 + Math.sin(t * 4 + Number(device.id)) * 0.12;
     meshRef.current.scale.set(pulse, pulse, pulse);
@@ -75,6 +76,7 @@ const DataPulse: React.FC<{ start: THREE.Vector3, end: THREE.Vector3, color: str
   const curve = useMemo(() => new THREE.LineCurve3(start, end), [start, end]);
   
   useFrame((state) => {
+    if (!pulseRef.current) return;
     const speed = 0.6 + Math.random() * 0.4;
     const t = (state.clock.getElapsedTime() * speed) % 1;
     const pos = curve.getPoint(t);
@@ -195,9 +197,11 @@ const TopologyVisualizer: React.FC<{ type: TopologyType; devices: NetworkDevice[
   }, [type, nodePositions, devices]);
 
   useFrame((state) => {
-    groupRef.current.rotation.y += 0.003;
-    const t = state.clock.getElapsedTime();
-    laserRef.current.position.y = Math.sin(t * 1.5) * 8;
+    if (groupRef.current) groupRef.current.rotation.y += 0.003;
+    if (laserRef.current) {
+        const t = state.clock.getElapsedTime();
+        laserRef.current.position.y = Math.sin(t * 1.5) * 8;
+    }
   });
 
   return (
