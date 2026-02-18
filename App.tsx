@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Shield, 
@@ -18,12 +17,12 @@ import { analyzeNetworkLogs } from './services/geminiService.ts';
 import { NetworkDevice, TrafficData, NetworkMetrics, SecurityAlert, TopologyType } from './types.ts';
 
 const INITIAL_DEVICES: NetworkDevice[] = [
-  { id: '1', name: 'VX_CORE_01', ip: '10.0.0.1', status: 'online', type: 'router', traffic: 450 },
+  { id: '1', name: 'VX_GATEWAY_01', ip: '10.0.0.1', status: 'online', type: 'router', traffic: 450 },
   { id: '2', name: 'NEURAL_UNIT_X', ip: '10.0.0.2', status: 'alert', type: 'server', traffic: 1200 },
-  { id: '3', name: 'STORAGE_CLD', ip: '10.0.0.15', status: 'online', type: 'server', traffic: 890 },
-  { id: '4', name: 'WKS_QUANTUM', ip: '10.0.0.102', status: 'online', type: 'workstation', traffic: 120 },
-  { id: '5', name: 'IoT_EDGE_S4', ip: '10.0.0.20', status: 'offline', type: 'iot', traffic: 0 },
-  { id: '6', name: 'FIREWALL_VX', ip: '10.0.0.5', status: 'online', type: 'router', traffic: 300 },
+  { id: '3', name: 'STORAGE_NODE_A', ip: '10.0.0.15', status: 'online', type: 'server', traffic: 890 },
+  { id: '4', name: 'QUANTUM_WKS_1', ip: '10.0.0.102', status: 'online', type: 'workstation', traffic: 120 },
+  { id: '5', name: 'EDGE_SENSOR_04', ip: '10.0.0.20', status: 'offline', type: 'iot', traffic: 0 },
+  { id: '6', name: 'FIREWALL_VX_0', ip: '10.0.0.5', status: 'online', type: 'router', traffic: 300 },
 ];
 
 const App: React.FC = () => {
@@ -64,9 +63,14 @@ const App: React.FC = () => {
   const triggerAudit = async () => {
     setIsAuditing(true);
     const data = `Metrics: ${JSON.stringify(metrics)}, ActiveNodes: ${devices.length}`;
-    const res = await analyzeNetworkLogs(data);
-    setAuditReport(res);
-    setIsAuditing(false);
+    try {
+        const res = await analyzeNetworkLogs(data);
+        setAuditReport(res);
+    } catch (err) {
+        setAuditReport("CRITICAL: NEURAL LINK TIMEOUT. RETRYING...");
+    } finally {
+        setIsAuditing(false);
+    }
   };
 
   return (
@@ -75,18 +79,18 @@ const App: React.FC = () => {
         <div className="nav-links">
           <button onClick={() => setActiveTab('monitor')} className={`nav-item ${activeTab === 'monitor' ? 'active' : ''}`}>
             <Activity size={24} />
-            <span>Flux</span>
+            <span>FLUX</span>
           </button>
           <button onClick={() => setActiveTab('nodes')} className={`nav-item ${activeTab === 'nodes' ? 'active' : ''}`}>
             <Server size={24} />
-            <span>Grid</span>
+            <span>NODES</span>
           </button>
           <button onClick={() => setActiveTab('audit')} className={`nav-item ${activeTab === 'audit' ? 'active' : ''}`}>
             <Brain size={24} />
-            <span>AI</span>
+            <span>AUDIT</span>
           </button>
         </div>
-        <div style={{ marginTop: 'auto', opacity: 0.3 }} className="desktop-only">
+        <div style={{ marginTop: 'auto', opacity: 0.2 }} className="desktop-only">
           <Settings size={22} />
         </div>
       </nav>
@@ -94,16 +98,16 @@ const App: React.FC = () => {
       <main className="main-workspace">
         <header className="header">
           <div>
-            <h1 className="header-title">NEXUS<span>GUARD</span> 4D</h1>
+            <h1 className="header-title">NEXUS<span>GUARD</span></h1>
             <div className="status-badge" style={{ marginTop: 6 }}>
               <div className="status-dot"></div>
-              QUANTUM LINK ESTABLISHED
+              4D PERSISTENT LINK
             </div>
           </div>
           <div className="desktop-only" style={{ display: 'flex', gap: '32px' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 900, fontFamily: 'Orbitron' }}>THROUGHPUT</div>
-              <div style={{ color: 'var(--neon-cyan)', fontWeight: 900, fontFamily: 'JetBrains Mono' }}>{metrics.bandwidth.toFixed(2)} GB/s</div>
+              <div style={{ fontSize: '9px', color: '#64748b', fontWeight: 900, fontFamily: 'Orbitron', letterSpacing: '0.1em' }}>THROUGHPUT</div>
+              <div style={{ color: 'var(--neon-cyan)', fontWeight: 900, fontFamily: 'JetBrains Mono', fontSize: '15px' }}>{metrics.bandwidth.toFixed(2)} GB/s</div>
             </div>
           </div>
         </header>
@@ -115,26 +119,25 @@ const App: React.FC = () => {
               {activeTab === 'monitor' && (
                 <>
                   <div className="card topology-box">
-                    {/* Fix: changed z-index to zIndex in inline style to resolve arithmetic operation error */}
-                    <div style={{ position: 'absolute', top: 20, left: 24, zIndex: 10, pointerEvents: 'none' }}>
-                      <span className="metric-label" style={{ color: '#fff' }}>Topology Stream</span>
+                    <div style={{ position: 'absolute', top: 20, left: 24, zIndex: 5, pointerEvents: 'none' }}>
+                      <span className="metric-label" style={{ color: '#fff', fontSize: '10px' }}>Quantum Topology</span>
                     </div>
-                    {/* Fix: changed z-index to zIndex in inline style to resolve arithmetic operation error */}
-                    <div style={{ position: 'absolute', top: 20, right: 24, zIndex: 10, display: 'flex', gap: 8 }}>
+                    <div style={{ position: 'absolute', top: 20, right: 24, zIndex: 5, display: 'flex', gap: 8 }}>
                       {['mesh', 'ring', 'star'].map(t => (
                         <button 
                           key={t}
                           onClick={() => setTopology(t as any)}
                           style={{
-                            background: topology === t ? 'var(--neon-cyan)' : 'rgba(0,0,0,0.5)',
+                            background: topology === t ? 'var(--neon-cyan)' : 'rgba(0,0,0,0.6)',
                             color: topology === t ? '#000' : '#fff',
                             border: '1px solid var(--glass-border)',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
                             fontSize: '9px',
                             fontWeight: 900,
                             fontFamily: 'Orbitron',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
                           }}
                         >
                           {t.toUpperCase()}
@@ -147,25 +150,25 @@ const App: React.FC = () => {
                   <div className="metric-tile-row">
                     <div className="metric-tile">
                       <span className="metric-label">Latency</span>
-                      <div className="metric-value">{metrics.latency.toFixed(1)}ms</div>
+                      <div className="metric-value">{metrics.latency.toFixed(1)}<span style={{ fontSize: '12px', opacity: 0.5 }}>ms</span></div>
+                    </div>
+                    <div className="metric-tile">
+                      <span className="metric-label">Integrity</span>
+                      <div className="metric-value" style={{ color: 'var(--neon-green)' }}>99.9%</div>
                     </div>
                     <div className="metric-tile">
                       <span className="metric-label">Nodes</span>
                       <div className="metric-value">{devices.length}</div>
                     </div>
                     <div className="metric-tile">
-                      <span className="metric-label">Flux</span>
-                      <div className="metric-value" style={{ color: 'var(--neon-cyan)' }}>{metrics.bandwidth.toFixed(1)}G</div>
-                    </div>
-                    <div className="metric-tile">
-                      <span className="metric-label">Uptime</span>
+                      <span className="metric-label">Session</span>
                       <div className="metric-value" style={{ fontSize: '14px' }}>{metrics.uptime}</div>
                     </div>
                   </div>
 
                   <div className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="metric-label">Traffic Telemetry</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <span className="metric-label">Traffic Telemetry Stream</span>
                       <Zap size={14} color="var(--neon-cyan)" />
                     </div>
                     <TrafficChart data={traffic} />
@@ -175,20 +178,28 @@ const App: React.FC = () => {
 
               {activeTab === 'nodes' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <span className="metric-label">Infrastructure Nodes</span>
+                  <span className="metric-label">Grid Entities</span>
                   {devices.map(d => (
-                    <div key={d.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px' }}>
+                    <div key={d.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                        <div style={{ background: 'rgba(0, 242, 255, 0.1)', padding: 12, borderRadius: 12 }}>
+                        <div style={{ background: 'rgba(0, 242, 255, 0.08)', padding: 12, borderRadius: 14, border: '1px solid var(--glass-border)' }}>
                           {d.type === 'router' ? <Globe size={24} color="var(--neon-cyan)" /> : <Cpu size={24} color="var(--neon-cyan)" />}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 900, fontSize: '16px', color: '#fff', fontFamily: 'Orbitron' }}>{d.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'JetBrains Mono' }}>{d.ip}</div>
+                          <div style={{ fontWeight: 900, fontSize: '16px', color: '#fff', fontFamily: 'Orbitron', letterSpacing: '0.05em' }}>{d.name}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'JetBrains Mono', marginTop: 2 }}>{d.ip}</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                        <div style={{ fontSize: '11px', fontWeight: 900, fontFamily: 'Orbitron', color: d.status === 'online' ? 'var(--neon-green)' : d.status === 'alert' ? 'var(--critical-red)' : '#475569' }}>
+                        <div style={{ 
+                            fontSize: '10px', 
+                            fontWeight: 900, 
+                            fontFamily: 'Orbitron', 
+                            color: d.status === 'online' ? 'var(--neon-green)' : d.status === 'alert' ? 'var(--critical-red)' : '#475569',
+                            background: d.status === 'online' ? 'rgba(57, 255, 20, 0.05)' : 'transparent',
+                            padding: '4px 10px',
+                            borderRadius: 6
+                        }}>
                           {d.status.toUpperCase()}
                         </div>
                         <ChevronRight size={18} color="#475569" />
@@ -200,16 +211,31 @@ const App: React.FC = () => {
 
               {activeTab === 'audit' && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Brain size={28} color="var(--neon-magenta)" />
-                    <span className="metric-label" style={{ margin: 0 }}>Gemini Deep-Audit</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ background: 'rgba(255, 0, 234, 0.1)', padding: 12, borderRadius: 12 }}>
+                        <Brain size={28} color="var(--neon-magenta)" />
+                    </div>
+                    <span className="metric-label" style={{ margin: 0, fontSize: '12px', color: '#fff' }}>Neural Diagnostic Portal</span>
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: 24, borderRadius: 20, border: '1px solid var(--glass-border)', minHeight: '300px' }}>
+                  <div className="custom-scroll" style={{ 
+                      background: 'rgba(0,0,0,0.45)', 
+                      padding: '24px', 
+                      borderRadius: '20px', 
+                      border: '1px solid var(--glass-border)', 
+                      minHeight: '340px',
+                      maxHeight: '500px',
+                      overflowY: 'auto'
+                    }}>
                     {auditReport ? (
-                      <p style={{ fontSize: '14px', lineHeight: '1.8', color: '#cbd5e1', whiteSpace: 'pre-wrap' }}>{auditReport}</p>
+                      <div style={{ fontSize: '14px', lineHeight: '1.8', color: '#cbd5e1', whiteSpace: 'pre-wrap', fontFamily: 'JetBrains Mono' }}>
+                        <div style={{ color: 'var(--neon-cyan)', marginBottom: 12 }}>[ AUDIT_LOG_SUCCESS_STREAM ]</div>
+                        {auditReport}
+                      </div>
                     ) : (
-                      <div style={{ color: '#475569', textAlign: 'center', marginTop: '120px', fontFamily: 'JetBrains Mono', fontSize: '13px' }}>
-                        [ SYSTEM READY FOR PACKET INSPECTION ]
+                      <div style={{ color: '#475569', textAlign: 'center', marginTop: '140px', fontFamily: 'JetBrains Mono', fontSize: '13px', opacity: 0.6 }}>
+                        // STANDBY FOR PACKET INSPECTION...
+                        <br/>
+                        // INITIALIZING NEURAL BUFFER...
                       </div>
                     )}
                   </div>
@@ -217,20 +243,21 @@ const App: React.FC = () => {
                     onClick={triggerAudit}
                     disabled={isAuditing}
                     style={{
-                      background: 'var(--neon-cyan)',
+                      background: isAuditing ? 'rgba(0, 242, 255, 0.2)' : 'var(--neon-cyan)',
                       color: '#000',
                       border: 'none',
-                      padding: 16,
-                      borderRadius: 14,
+                      padding: '18px',
+                      borderRadius: '16px',
                       fontWeight: 900,
                       fontFamily: 'Orbitron',
                       fontSize: '12px',
                       letterSpacing: '0.2em',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 20px rgba(0, 242, 255, 0.4)'
+                      cursor: isAuditing ? 'default' : 'pointer',
+                      boxShadow: isAuditing ? 'none' : '0 0 25px rgba(0, 242, 255, 0.4)',
+                      transition: 'all 0.3s ease'
                     }}
                   >
-                    {isAuditing ? 'PROCESSING DATA STREAM...' : 'EXECUTE NEURAL AUDIT'}
+                    {isAuditing ? 'INSPECTING DATA PACKETS...' : 'EXECUTE NEURAL AUDIT'}
                   </button>
                 </div>
               )}
@@ -238,33 +265,43 @@ const App: React.FC = () => {
 
             <div className="side-col">
               <div className="card" style={{ textAlign: 'center' }}>
-                <span className="metric-label">System Integrity</span>
-                <div style={{ position: 'relative', width: 160, height: 160, margin: '24px auto' }}>
+                <span className="metric-label">Network Integrity</span>
+                <div style={{ position: 'relative', width: 170, height: 170, margin: '24px auto' }}>
                   <svg style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <circle cx="80" cy="80" r="70" fill="transparent" stroke="rgba(0, 242, 255, 0.05)" strokeWidth="10" />
-                    <circle cx="80" cy="80" r="70" fill="transparent" stroke="var(--neon-cyan)" strokeWidth="10" strokeDasharray="440" strokeDashoffset="44" strokeLinecap="round" />
+                    <circle cx="85" cy="85" r="75" fill="transparent" stroke="rgba(0, 242, 255, 0.05)" strokeWidth="12" />
+                    <circle cx="85" cy="85" r="75" fill="transparent" stroke="var(--neon-cyan)" strokeWidth="12" strokeDasharray="471" strokeDashoffset="47" strokeLinecap="round" />
                   </svg>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '28px', fontWeight: 900, fontFamily: 'Orbitron' }}>90%</div>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '32px', fontWeight: 900, fontFamily: 'Orbitron', color: '#fff' }}>90%</div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
                   <Lock size={12} color="var(--neon-cyan)" />
-                  <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 900 }}>ENCRYPTED STACK</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 900, fontFamily: 'Orbitron' }}>TLS 1.3 QUANTUM</span>
                 </div>
               </div>
 
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                  <span className="metric-label">Threat Log</span>
+                  <span className="metric-label">Security Incident Log</span>
                   <Shield size={16} color="var(--critical-red)" />
                 </div>
                 {[
-                  { id: 1, type: 'CRITICAL', msg: 'Core Node Infiltration Alert', time: '1m ago' },
-                  { id: 2, type: 'WARN', msg: 'Packet Fragmentation on Port 80', time: '12m ago' },
-                  { id: 3, type: 'INFO', msg: 'New Handshake from VX_EDGE', time: '45m ago' }
+                  { id: 1, type: 'CRIT', msg: 'Anomalous Data Burst on Node_X', time: '45s ago' },
+                  { id: 2, type: 'WARN', msg: 'Packet Fragmentation Detected', time: '14m ago' },
+                  { id: 3, type: 'INFO', msg: 'System Entropy Normalized', time: '52m ago' }
                 ].map(item => (
-                  <div key={item.id} style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, marginBottom: 12, borderLeft: `3px solid ${item.type === 'CRITICAL' ? 'var(--critical-red)' : 'var(--neon-cyan)'}` }}>
-                    <div style={{ fontSize: '9px', fontWeight: 900, color: '#475569', marginBottom: 4 }}>{item.time} // {item.type}</div>
-                    <div style={{ fontSize: '12px', color: '#e2e8f0', fontWeight: 600 }}>{item.msg}</div>
+                  <div key={item.id} style={{ 
+                      padding: '14px', 
+                      background: 'rgba(255,255,255,0.02)', 
+                      borderRadius: 14, 
+                      marginBottom: 12, 
+                      borderLeft: `4px solid ${item.type === 'CRIT' ? 'var(--critical-red)' : 'var(--neon-cyan)'}`,
+                      border: '1px solid rgba(255,255,255,0.04)'
+                    }}>
+                    <div style={{ fontSize: '9px', fontWeight: 900, color: '#475569', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{item.type} // LOG_ID_{item.id}</span>
+                        <span>{item.time}</span>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: 600 }}>{item.msg}</div>
                   </div>
                 ))}
               </div>
