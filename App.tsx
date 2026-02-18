@@ -6,14 +6,12 @@ import {
   Globe, 
   Server, 
   Smartphone, 
-  AlertTriangle, 
   Zap,
   RefreshCw,
   LayoutDashboard,
   Terminal,
   Settings,
   BrainCircuit,
-  MessageSquare,
   Circle,
   Network,
   Grid3X3,
@@ -22,9 +20,7 @@ import {
   Radio,
   BarChart3,
   Radar,
-  ChevronRight,
-  Database,
-  Lock
+  Database
 } from 'lucide-react';
 import NetworkGlobe from './components/NetworkGlobe';
 import TrafficChart from './components/TrafficChart';
@@ -161,8 +157,8 @@ const App: React.FC = () => {
               <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 900, letterSpacing: '0.3em', marginBottom: '4px' }}>Grid Uplink</div>
               <div style={{ fontSize: '14px', fontWeight: 900, color: '#0ea5e9', fontFamily: 'Orbitron' }}>984.2 GB / SEC</div>
             </div>
-            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(14, 165, 233, 0.05)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: '#0ea5e9' }}>
-              <Wifi size={24} style={{ margin: 'auto' }} />
+            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(14, 165, 233, 0.05)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0ea5e9' }}>
+              <Wifi size={24} />
             </div>
           </div>
         </header>
