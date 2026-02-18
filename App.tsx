@@ -28,14 +28,14 @@ import { analyzeNetworkLogs, getSmartSuggestions } from './services/geminiServic
 import { NetworkDevice, TrafficData, NetworkMetrics, SecurityAlert, TopologyType } from './types.ts';
 
 const INITIAL_DEVICES: NetworkDevice[] = [
-  { id: '1', name: 'CORE_GW_01', ip: '10.0.0.1', status: 'online', type: 'router', traffic: 450 },
-  { id: '2', name: 'SENTINEL_X', ip: '10.0.0.2', status: 'alert', type: 'server', traffic: 1200 },
-  { id: '3', name: 'WKS_ALPHA', ip: '10.0.0.15', status: 'online', type: 'workstation', traffic: 85 },
-  { id: '4', name: 'SENSOR_01', ip: '10.0.0.102', status: 'offline', type: 'iot', traffic: 0 },
-  { id: '5', name: 'K8S_MASTER', ip: '10.0.0.20', status: 'online', type: 'server', traffic: 890 },
-  { id: '6', name: 'WKS_BETA', ip: '10.0.0.16', status: 'online', type: 'workstation', traffic: 120 },
-  { id: '7', name: 'AUTH_HUB', ip: '10.0.0.5', status: 'online', type: 'server', traffic: 340 },
-  { id: '8', name: 'CAM_SEC_01', ip: '10.0.0.88', status: 'online', type: 'iot', traffic: 45 }
+  { id: '1', name: 'GW_01', ip: '10.0.0.1', status: 'online', type: 'router', traffic: 450 },
+  { id: '2', name: 'SENTINEL', ip: '10.0.0.2', status: 'alert', type: 'server', traffic: 1200 },
+  { id: '3', name: 'WKS_A', ip: '10.0.0.15', status: 'online', type: 'workstation', traffic: 85 },
+  { id: '4', name: 'IOT_S1', ip: '10.0.0.102', status: 'offline', type: 'iot', traffic: 0 },
+  { id: '5', name: 'K8S_M', ip: '10.0.0.20', status: 'online', type: 'server', traffic: 890 },
+  { id: '6', name: 'WKS_B', ip: '10.0.0.16', status: 'online', type: 'workstation', traffic: 120 },
+  { id: '7', name: 'AUTH', ip: '10.0.0.5', status: 'online', type: 'server', traffic: 340 },
+  { id: '8', name: 'CAM_01', ip: '10.0.0.88', status: 'online', type: 'iot', traffic: 45 }
 ];
 
 const App: React.FC = () => {
@@ -45,17 +45,16 @@ const App: React.FC = () => {
     latency: 14.2,
     bandwidth: 980,
     packetLoss: 0.004,
-    uptime: '45d 12h 08m'
+    uptime: '45d 12h'
   });
   const [trafficHistory, setTrafficHistory] = useState<TrafficData[]>([]);
   const [alerts] = useState<SecurityAlert[]>([
-    { id: 'a1', severity: 'high', message: 'UNAUTHORIZED SCAN DETECTED ON PORT 22', timestamp: '1m ago' },
-    { id: 'a2', severity: 'medium', message: 'BANDWIDTH ANOMALY IN SECTOR C', timestamp: '10m ago' },
-    { id: 'a3', severity: 'low', message: 'BACKUP SEQUENCE COMPLETED', timestamp: '55m ago' }
+    { id: 'a1', severity: 'high', message: 'Unauthorized scan detected', timestamp: '1m ago' },
+    { id: 'a2', severity: 'medium', message: 'Bandwidth anomaly sector C', timestamp: '10m ago' },
+    { id: 'a3', severity: 'low', message: 'Backup sequence complete', timestamp: '55m ago' }
   ]);
   const [analysis, setAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [logInput, setLogInput] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'devices' | 'ai'>('dashboard');
 
@@ -68,20 +67,20 @@ const App: React.FC = () => {
       }));
 
       setTrafficHistory(prev => {
-        const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const updated = [...prev, {
           time,
           inbound: Math.floor(Math.random() * 450) + 250,
           outbound: Math.floor(Math.random() * 250) + 100
         }];
-        return updated.length > 30 ? updated.slice(1) : updated;
+        return updated.length > 20 ? updated.slice(1) : updated;
       });
 
       setDevices(prev => prev.map(d => ({
         ...d,
         traffic: d.status === 'online' ? Math.max(0, d.traffic + (Math.random() - 0.5) * 50) : d.traffic
       })));
-    }, 2000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -89,13 +88,10 @@ const App: React.FC = () => {
   const handleAiAnalysis = async () => {
     setIsAnalyzing(true);
     try {
-      const result = await analyzeNetworkLogs(logInput || JSON.stringify({ devices, metrics, activeTopology: topology }));
+      const result = await analyzeNetworkLogs(logInput || JSON.stringify({ devices, metrics, topology }));
       setAnalysis(result);
-      const sug = await getSmartSuggestions(metrics);
-      setSuggestions(sug);
     } catch (e) {
-      console.error(e);
-      setAnalysis("NEURAL CORE OFFLINE. RESTORE POWER TO AI MODULE.");
+      setAnalysis("NEURAL CORE OFFLINE.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -103,7 +99,7 @@ const App: React.FC = () => {
 
   const getAlertClass = (sev: SecurityAlert['severity']) => {
     switch(sev) {
-      case 'critical': return 'alert-high';
+      case 'critical':
       case 'high': return 'alert-high';
       case 'medium': return 'alert-medium';
       default: return 'alert-low';
@@ -116,49 +112,46 @@ const App: React.FC = () => {
       
       <nav className="sidebar">
         <div className="logo-container">
-          <Radar style={{ color: '#0ea5e9' }} size={32} />
+          <Radar style={{ color: '#0ea5e9' }} size={28} />
         </div>
 
         <div className="nav-links">
-          {[
-            { id: 'dashboard', icon: LayoutDashboard, label: 'HUB' },
-            { id: 'devices', icon: Server, label: 'ENTITIES' },
-            { id: 'ai', icon: BrainCircuit, label: 'NEURAL' }
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-            >
-              <tab.icon size={28} />
-              <span>{tab.label}</span>
-            </button>
-          ))}
+          <button onClick={() => setActiveTab('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}>
+            <LayoutDashboard size={24} />
+            <span>HUB</span>
+          </button>
+          <button onClick={() => setActiveTab('devices')} className={`nav-item ${activeTab === 'devices' ? 'active' : ''}`}>
+            <Server size={24} />
+            <span>ENTITIES</span>
+          </button>
+          <button onClick={() => setActiveTab('ai')} className={`nav-item ${activeTab === 'ai' ? 'active' : ''}`}>
+            <BrainCircuit size={24} />
+            <span>NEURAL</span>
+          </button>
         </div>
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
-          <button className="nav-item"><Terminal size={24} /></button>
-          <button className="nav-item"><Settings size={24} /></button>
+        <div className="logo-container" style={{ marginTop: 'auto', background: 'transparent', boxShadow: 'none' }}>
+          <Settings style={{ color: '#475569' }} size={20} />
         </div>
       </nav>
 
       <main className="main-workspace">
         <header className="app-header">
           <div className="header-left">
-            <h1 className="app-title">NexusGuard <span>4D</span></h1>
+            <h1 className="app-title">Nexus<span>Guard</span></h1>
             <div className="status-badge">
               <span className="status-dot"></span>
-              Quantum Sync: Nominal
+              SYNC: OK
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
+          <div className="header-right-stats" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 900, letterSpacing: '0.3em', marginBottom: '4px' }}>Grid Uplink</div>
-              <div style={{ fontSize: '14px', fontWeight: 900, color: '#0ea5e9', fontFamily: 'Orbitron' }}>984.2 GB / SEC</div>
+              <div style={{ fontSize: '9px', color: '#64748b', fontWeight: 900, letterSpacing: '0.2em' }}>UPLINK</div>
+              <div style={{ fontSize: '12px', fontWeight: 900, color: '#0ea5e9', fontFamily: 'Orbitron' }}>{(metrics.bandwidth / 10).toFixed(1)} GB/S</div>
             </div>
-            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(14, 165, 233, 0.05)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0ea5e9' }}>
-              <Wifi size={24} />
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(14, 165, 233, 0.05)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0ea5e9' }}>
+              <Wifi size={20} />
             </div>
           </div>
         </header>
@@ -170,111 +163,89 @@ const App: React.FC = () => {
               {activeTab === 'dashboard' && (
                 <>
                   <div className="metric-row">
-                    {[
-                      { label: 'Latency', val: `${metrics.latency.toFixed(2)}ms`, icon: Activity, color: '#0ea5e9' },
-                      { label: 'Throughput', val: `${(metrics.bandwidth / 1000).toFixed(2)}Gbps`, icon: Zap, color: '#f472b6' },
-                      { label: 'Uptime', val: metrics.uptime, icon: Radio, color: '#10b981' },
-                      { label: 'Entropy', val: 'Minimal', icon: Shield, color: '#f59e0b' }
-                    ].map((m, i) => (
-                      <div key={i} className="glass-card hud-border">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                          <span className="metric-label">{m.label}</span>
-                          <m.icon size={20} style={{ color: m.color }} />
-                        </div>
-                        <div className="metric-value">{m.val}</div>
-                      </div>
-                    ))}
+                    <div className="glass-card hud-border">
+                      <span className="metric-label">Latency</span>
+                      <div className="metric-value">{metrics.latency.toFixed(1)}ms</div>
+                    </div>
+                    <div className="glass-card hud-border">
+                      <span className="metric-label">Nodes</span>
+                      <div className="metric-value">{devices.length}</div>
+                    </div>
+                    <div className="glass-card hud-border">
+                      <span className="metric-label">Alerts</span>
+                      <div className="metric-value" style={{ color: '#f43f5e' }}>{alerts.length}</div>
+                    </div>
+                    <div className="glass-card hud-border">
+                      <span className="metric-label">Uptime</span>
+                      <div className="metric-value" style={{ fontSize: '18px' }}>{metrics.uptime}</div>
+                    </div>
                   </div>
 
                   <div className="glass-card topology-container">
                     <div className="topology-header">
                       <div>
-                        <h3 style={{ margin: 0, fontFamily: 'Orbitron', fontWeight: 900, letterSpacing: '0.4em', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                          <Radar size={24} style={{ color: '#0ea5e9' }} /> Neural Topology Matrix
-                        </h3>
-                        <p style={{ margin: '12px 0 0', fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Projection: 4D_VIRTUAL // Nodes: {devices.length}</p>
+                        <h3 style={{ margin: 0, fontFamily: 'Orbitron', fontWeight: 900, letterSpacing: '0.2em', fontSize: '13px' }}>NEURAL TOPOLOGY</h3>
                       </div>
                       <div className="topology-controls">
-                        {[
-                          { id: 'star', icon: Circle, label: 'STAR' },
-                          { id: 'ring', icon: RefreshCw, label: 'RING' },
-                          { id: 'grid', icon: Grid3X3, label: 'GRID' },
-                          { id: 'mesh', icon: Network, label: 'MESH' },
-                          { id: 'hybrid', icon: Dna, label: 'HYBRID' }
-                        ].map(t => (
+                        {['star', 'ring', 'grid', 'mesh', 'hybrid'].map(t => (
                           <button 
-                            key={t.id}
-                            onClick={() => setTopology(t.id as any)}
-                            className={`control-btn ${topology === t.id ? 'active' : ''}`}
+                            key={t}
+                            onClick={() => setTopology(t as any)}
+                            className={`control-btn ${topology === t ? 'active' : ''}`}
                           >
-                            <t.icon size={16} />
-                            {t.label}
+                            {t.toUpperCase()}
                           </button>
                         ))}
                       </div>
                     </div>
-
                     <div style={{ flex: 1, position: 'relative' }}>
                       <NetworkGlobe type={topology} devices={devices} />
                     </div>
                   </div>
 
                   <div className="glass-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ margin: 0, fontFamily: 'Orbitron', fontWeight: 900, letterSpacing: '0.3em', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <BarChart3 size={20} style={{ color: '#0ea5e9' }} /> Bitstream Telemetry
-                      </h3>
-                    </div>
+                    <h3 style={{ margin: '0 0 24px', fontFamily: 'Orbitron', fontWeight: 900, fontSize: '12px', letterSpacing: '0.2em' }}>BITSTREAM TELEMETRY</h3>
                     <TrafficChart data={trafficHistory} />
                   </div>
                 </>
               )}
 
               {activeTab === 'devices' && (
-                <div className="glass-card" style={{ minHeight: '80vh' }}>
-                  <h2 style={{ fontFamily: 'Orbitron', fontWeight: 900, fontSize: '32px', margin: '0 0 40px' }}>GRID ENTITIES</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                    {devices.map(d => (
-                      <div key={d.id} className="glass-card" style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                          <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {d.type === 'router' && <Globe size={32} />}
-                            {d.type === 'server' && <Server size={32} />}
-                            {d.type === 'workstation' && <Smartphone size={32} />}
-                            {d.type === 'iot' && <Zap size={32} />}
-                          </div>
-                          <div>
-                            <div style={{ fontFamily: 'Orbitron', fontWeight: 900, fontSize: '18px' }}>{d.name}</div>
-                            <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>{d.ip}</div>
-                          </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h2 style={{ fontFamily: 'Orbitron', fontWeight: 900, fontSize: '24px', margin: '0 0 16px' }}>ENTITIES</h2>
+                  {devices.map(d => (
+                    <div key={d.id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{ color: d.status === 'online' ? '#0ea5e9' : '#f43f5e' }}>
+                          {d.type === 'router' ? <Globe size={24} /> : <Server size={24} />}
                         </div>
-                        <div style={{ padding: '8px 24px', borderRadius: '99px', fontSize: '10px', fontWeight: 900, border: '1px solid', color: d.status === 'online' ? '#10b981' : '#f43f5e' }}>
-                          {d.status.toUpperCase()}
+                        <div>
+                          <div style={{ fontWeight: 900, fontSize: '14px' }}>{d.name}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>{d.ip}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div style={{ fontSize: '10px', fontWeight: 900, color: d.status === 'online' ? '#10b981' : '#f43f5e' }}>{d.status.toUpperCase()}</div>
+                    </div>
+                  ))}
                 </div>
               )}
 
               {activeTab === 'ai' && (
-                <div className="glass-card" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                    <BrainCircuit size={48} style={{ color: '#9333ea' }} />
-                    <h2 style={{ fontFamily: 'Orbitron', fontWeight: 900, fontSize: '32px', margin: 0 }}>NEURAL CORE X1</h2>
-                  </div>
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <h2 style={{ fontFamily: 'Orbitron', fontWeight: 900, fontSize: '24px' }}>NEURAL AUDIT</h2>
                   <textarea 
                     className="ai-buffer custom-scroll"
                     value={logInput}
                     onChange={(e) => setLogInput(e.target.value)}
-                    placeholder="Feed raw packet logs into the neural buffer..."
+                    placeholder="Capture packets..."
+                    style={{ height: '180px' }}
                   />
                   <button onClick={handleAiAnalysis} disabled={isAnalyzing} className="action-btn">
-                    {isAnalyzing ? <RefreshCw className="animate-spin" /> : "Initiate Neural Audit"}
+                    {isAnalyzing ? "Processing..." : "Initiate Audit"}
                   </button>
                   {analysis && (
-                    <div className="glass-card" style={{ borderLeft: '4px solid #9333ea' }}>
-                      <p style={{ lineHeight: '1.8', fontSize: '15px' }}>{analysis}</p>
+                    <div className="glass-card" style={{ background: 'rgba(147, 51, 234, 0.05)', borderColor: 'rgba(147, 51, 234, 0.2)' }}>
+                      <p style={{ fontSize: '13px', lineHeight: '1.6' }}>{analysis}</p>
                     </div>
                   )}
                 </div>
@@ -283,32 +254,23 @@ const App: React.FC = () => {
 
             <div className="side-column">
               <div className="glass-card" style={{ textAlign: 'center' }}>
-                <span className="metric-label">Grid Integrity</span>
-                <div style={{ position: 'relative', width: '250px', height: '250px', margin: '40px auto' }}>
+                <span className="metric-label">Grid Health</span>
+                <div style={{ position: 'relative', width: '160px', height: '160px', margin: '24px auto' }}>
                   <svg style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <circle cx="125" cy="125" r="110" fill="transparent" stroke="rgba(14, 165, 233, 0.1)" strokeWidth="12" />
-                    <circle cx="125" cy="125" r="110" fill="transparent" stroke="#0ea5e9" strokeWidth="12" strokeDasharray="691" strokeDashoffset="20" strokeLinecap="round" />
+                    <circle cx="80" cy="80" r="70" fill="transparent" stroke="rgba(14, 165, 233, 0.1)" strokeWidth="8" />
+                    <circle cx="80" cy="80" r="70" fill="transparent" stroke="#0ea5e9" strokeWidth="8" strokeDasharray="440" strokeDashoffset="44" strokeLinecap="round" />
                   </svg>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                    <div style={{ fontSize: '64px', fontWeight: 900, fontFamily: 'Orbitron' }}>98</div>
-                    <div style={{ fontSize: '10px', fontWeight: 900, color: '#0ea5e9', marginTop: '10px' }}>OPTIMAL</div>
-                  </div>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '32px', fontWeight: 900, fontFamily: 'Orbitron' }}>90%</div>
                 </div>
               </div>
 
-              <div className="glass-card" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between' }}>
-                   <span className="metric-label">Active Threats</span>
-                   <Shield size={20} style={{ color: '#f43f5e' }} />
-                </div>
-                <div className="custom-scroll" style={{ overflowY: 'auto' }}>
+              <div className="glass-card">
+                <span className="metric-label" style={{ marginBottom: '24px' }}>Active Threats</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {alerts.map(a => (
-                    <div key={a.id} className={`alert-item ${getAlertClass(a.severity)}`}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 900 }}>
-                        <Shield size={16} />
-                        <span>{a.timestamp}</span>
-                      </div>
-                      <div style={{ fontSize: '13px', fontWeight: 700 }}>{a.message}</div>
+                    <div key={a.id} className={`alert-item ${getAlertClass(a.severity)}`} style={{ padding: '16px', borderRadius: '16px', marginBottom: 0 }}>
+                      <div style={{ fontSize: '11px', fontWeight: 900, marginBottom: '4px' }}>{a.timestamp}</div>
+                      <div style={{ fontSize: '12px' }}>{a.message}</div>
                     </div>
                   ))}
                 </div>
