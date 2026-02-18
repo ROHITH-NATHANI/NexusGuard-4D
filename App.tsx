@@ -22,10 +22,10 @@ import {
   Radar,
   Database
 } from 'lucide-react';
-import NetworkGlobe from './components/NetworkGlobe';
-import TrafficChart from './components/TrafficChart';
-import { analyzeNetworkLogs, getSmartSuggestions } from './services/geminiService';
-import { NetworkDevice, TrafficData, NetworkMetrics, SecurityAlert, TopologyType } from './types';
+import NetworkGlobe from './components/NetworkGlobe.tsx';
+import TrafficChart from './components/TrafficChart.tsx';
+import { analyzeNetworkLogs, getSmartSuggestions } from './services/geminiService.ts';
+import { NetworkDevice, TrafficData, NetworkMetrics, SecurityAlert, TopologyType } from './types.ts';
 
 const INITIAL_DEVICES: NetworkDevice[] = [
   { id: '1', name: 'CORE_GW_01', ip: '10.0.0.1', status: 'online', type: 'router', traffic: 450 },

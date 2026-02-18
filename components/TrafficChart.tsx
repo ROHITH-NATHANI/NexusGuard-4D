@@ -1,6 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrafficData } from '../types';
+import { TrafficData } from '../types.ts';
 
 interface Props {
   data: TrafficData[];

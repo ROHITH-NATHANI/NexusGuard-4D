@@ -12,7 +12,7 @@ import {
   PerspectiveCamera
 } from '@react-three/drei';
 import * as THREE from 'three';
-import { TopologyType, NetworkDevice } from '../types';
+import { TopologyType, NetworkDevice } from '../types.ts';
 
 interface NodeMeshProps {
   position: [number, number, number];
