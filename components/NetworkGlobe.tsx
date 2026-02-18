@@ -44,8 +44,10 @@ const NodeMesh: React.FC<NodeMeshProps> = ({ position, device }) => {
         position={[0, 0.6, 0]}
         fontSize={0.2}
         color="#ffffff"
-        font="https://fonts.gstatic.com/s/orbitron/v25/yMJRMIPr_9zSaAd9nToO375aaA.woff"
+        font="https://fonts.gstatic.com/s/orbitron/v20/yMJRMIPr_9zSaAd9nToO375aaA.woff"
         anchorX="center"
+        maxWidth={2}
+        textAlign="center"
       >
         {device.name}
       </Text>
@@ -162,10 +164,10 @@ const NetworkGlobe: React.FC<{ type: TopologyType, devices: NetworkDevice[] }> =
     <div className="w-full h-full absolute inset-0">
       <Canvas 
         camera={{ position: [0, 0, isMobile ? 12 : 18], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
         <color attach="background" args={['#020617']} />
-        <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+        <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} color="#0ea5e9" />
         
